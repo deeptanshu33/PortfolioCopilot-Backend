@@ -32,7 +32,7 @@ SECRET_KEY = 'django-insecure-pcxb3!t2n^i)t^!h5s*ot8nd!g_+*yx$^r%x5=perr-7)1kw)+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS: list = []
 
 # Application definition
 
@@ -45,10 +45,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'research',
     'tools',
-    'agents',
     'rest_framework',
     'corsheaders',
     'accounts',
+    "django_celery_results",
+    "django_extensions"
 ]
 
 MIDDLEWARE = [
@@ -117,7 +118,12 @@ DATABASES = {
 }
 
 CELERY_BROKER_URL = "redis://127.0.0.1:6379/0"
-CELERY_RESULT_BACKEND = "redis://127.0.0.1:6379/0"
+CELERY_RESULT_BACKEND = "django-db" 
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = "UTC"
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
