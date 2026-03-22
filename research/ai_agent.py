@@ -1,8 +1,11 @@
 from agents import Agent, Runner, function_tool, WebSearchTool
 import numpy as np
-import yfinance as yf # type: ignore
-
-from tools.schemas import PortfolioReport  
+import yfinance as yf  # type: ignore
+from research.models import ResearchReport
+# from research.redis import publish
+from tools.schemas import PortfolioReport
+from channels.layers import get_channel_layer #type:ignore
+from asgiref.sync import async_to_sync
 
 
 @function_tool
@@ -60,36 +63,63 @@ def get_ticker_price_volatility(ticker: str):
 agent = Agent(
     name="portfolio managing expert",
     instructions="You are a portfolio managing expert like Warren Buffet, you will recieve a ticker as input and a thesis regarding it as input. Using the tools provided and your expertise in the matter comment on the provided thesis in the form of a short report, there is no necessity to validated the provided thesis always, be objective and factual. You can search the web to get a pictute of the global economic and political landscape if required. When numerical financial metrics are returned by tools, ALWAYS use those values in your analysis. Do not replace them with numbers from web sources. Web search should only be used for qualitative context like news, macro trends, or analyst sentiment.",
-
     tools=[
         get_ticker_fundamentals,
         get_ticker_price_history,
         get_ticker_price_volatility,
         WebSearchTool(),
     ],
-
-    output_type=PortfolioReport
+    output_type=PortfolioReport,
 )
 
 
-async def _call_agent_async(thesis: str):
-    result = Runner.run_streamed(agent, thesis)
-    async for event in result.stream_events():
-        if event.type == "raw_response_event":
-            continue
-        elif event.type == "agent_updated_stream_event":
-            continue
-        elif event.type == "run_item_stream_event":
-            if event.item.type == "tool_call_item":
-                raw = event.item.raw_item
-                # Try common attribute names first, then dict keys, and finally fall back to the raw type name
-                tool_name = None
-                if isinstance(raw, dict):
-                    tool_name = raw.get("name") or raw.get("tool_name")
-                else:
-                    tool_name = getattr(raw, "name", None) or getattr(raw, "tool_name", None) or getattr(raw, "tool", None)
-                print(f"Tool called: {tool_name or type(raw).__name__}")
-            else:
-                pass  # Ignore other event types
-    return result.final_output.model_dump()
+def publish(ws_id, data):
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        f"agent_{ws_id}",
+        {
+            "type": "send_update",
+            "data": data
+        }
+    )
 
+
+async def _call_agent_async(thesis: str, ws_id: str, report: ResearchReport):
+    try:
+        result = Runner.run_streamed(agent, thesis)
+        async for event in result.stream_events():
+            if event.type == "raw_response_event":
+                continue
+            elif event.type == "agent_updated_stream_event":
+                continue
+            elif event.type == "run_item_stream_event":
+                if event.item.type == "tool_call_item":
+                    raw = event.item.raw_item
+                    # Try common attribute names first, then dict keys, and finally fall back to the raw type name
+                    tool_name = None
+                    if isinstance(raw, dict):
+                        tool_name = raw.get("name") or raw.get("tool_name")
+                    else:
+                        tool_name = (
+                            getattr(raw, "name", None)
+                            or getattr(raw, "tool_name", None)
+                            or getattr(raw, "tool", None)
+                        )
+                    # print(f"Tool called: {tool_name or type(raw).__name__}")
+                    publish(
+                        ws_id,
+                        {"type": "tool_call", "tool": tool_name or type(raw).__name__},
+                    )
+                else:
+                    pass  # Ignore other event types
+
+        final_output = result.final_output.model_dump()
+        # send final report over ws
+        publish(ws_id, {"type": "final_report", "data": final_output})
+
+        report.final_report = final_output
+        report.status = ResearchReport.Status.COMPLETED
+        report.save(update_fields=['final_report', 'status'])
+    except Exception:
+        report.status = ResearchReport.Status.FAILED  
+        

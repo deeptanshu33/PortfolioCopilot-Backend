@@ -2,7 +2,7 @@ import yfinance as yf  # type: ignore
 from tools.base import BaseTool
 import numpy as np
 
-from tools.schemas import VolatilityInput
+# from tools.schemas import VolatilityInput
 
 
 class ComputeVolatilityTool(BaseTool):
@@ -10,7 +10,7 @@ class ComputeVolatilityTool(BaseTool):
     description = """
     Compute annualized volatility using daily returns.
     """
-    input_schema = VolatilityInput
+    # input_schema = VolatilityInput
 
     def execute(self, **kwargs):
         ticker = kwargs.get("ticker")

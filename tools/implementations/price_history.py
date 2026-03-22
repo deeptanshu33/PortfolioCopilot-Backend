@@ -1,6 +1,6 @@
 import yfinance as yf  # type: ignore
 from tools.base import BaseTool
-from tools.schemas import PriceHistoryInput
+# from tools.schemas import PriceHistoryInput
 
 
 class GetPriceHistory(BaseTool):
@@ -8,7 +8,7 @@ class GetPriceHistory(BaseTool):
     description = """
         Fetch historical closing prices for a stock for the last 6 months.
     """
-    input_schema = PriceHistoryInput
+    # input_schema = PriceHistoryInput
 
     def execute(self, **kwargs):
         ticker = kwargs.get("ticker")

@@ -19,7 +19,6 @@ class ResearchReport(BaseModel):
     thesis = models.TextField()
     status = models.CharField(choices=Status.choices, max_length=2, default=Status.PENDING)
     final_report = models.JSONField(null=True, blank=True)
-    confidence_score = models.FloatField(null=True, blank=True)
 
 class ReportState(BaseModel):
     report = models.OneToOneField(ResearchReport, on_delete=models.CASCADE)

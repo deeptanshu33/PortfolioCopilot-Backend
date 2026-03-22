@@ -49,7 +49,8 @@ INSTALLED_APPS = [
     'corsheaders',
     'accounts',
     "django_celery_results",
-    "django_extensions"
+    "django_extensions",
+    "channels",
 ]
 
 MIDDLEWARE = [
@@ -67,6 +68,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000"
 ]
 
+ASGI_APPLICATION = "investment_agent_backend.asgi.application"
+
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
@@ -74,6 +77,15 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES" : (
         "rest_framework.permissions.IsAuthenticated",
     ),
+}
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
 }
 
 SIMPLE_JWT = {

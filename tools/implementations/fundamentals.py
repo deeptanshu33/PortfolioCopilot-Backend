@@ -1,7 +1,7 @@
 from tools.base import BaseTool
 import yfinance as yf #type: ignore
 
-from tools.schemas import FundamentalsInput 
+# from tools.schemas import FundamentalsInput 
 
 class GetFundamentalsTool(BaseTool):
     name = "get_fundamentals"
@@ -9,7 +9,7 @@ class GetFundamentalsTool(BaseTool):
     Fetch financial fundamentals for a company including
     PE ratio, revenue growth, and debt to equity.
     '''
-    input_schema = FundamentalsInput
+    # input_schema = FundamentalsInput
 
     def execute(self, **kwargs):
         ticker = kwargs.get("ticker")

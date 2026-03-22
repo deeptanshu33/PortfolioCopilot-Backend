@@ -3,6 +3,7 @@ from celery import shared_task
 
 
 from research.ai_agent import _call_agent_async
+from research.models import ResearchReport
 
 # from research.models import ResearchReport 
 
@@ -19,6 +20,6 @@ from research.ai_agent import _call_agent_async
 #     report.save()
 
 
-@shared_task
-def call_agent(thesis: str):
-    return asyncio.run(_call_agent_async(thesis))
+@shared_task(bind=True)
+def call_agent(thesis: str, ws_id: str, report: ResearchReport):
+    return asyncio.run(_call_agent_async(thesis, ws_id))
